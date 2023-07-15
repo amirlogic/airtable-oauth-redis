@@ -5,6 +5,13 @@ const qs = require('qs');
 const express = require('express');
 const bodyParser = require('body-parser');
 
+const redis = require('redis');
+let redcli;
+
+// If you experience problems with redis, set to false
+const USE_REDIS = false;
+
+
 const app = express();
 app.use(bodyParser.urlencoded({extended: false}));
 app.use(bodyParser.json());
@@ -253,9 +260,35 @@ app.post('/refresh_token', (req, res) => {
         });
 });
 
-app.listen(port, () => {
-    console.log(`Example app listening on port ${port}`);
-});
+
+const startApp = async ()=>{
+
+    try{
+
+        if(USE_REDIS){
+
+            redcli = redis.createClient({
+                url: config.redisUrl
+            });
+
+            redcli.on('error', err => console.log('Redis Client Error', err));
+
+            await redcli.connect()
+        }
+
+        app.listen(port, () => {
+
+            console.log(`Example app listening on port ${port}`);
+        });
+
+    }
+    catch(err){
+
+        console.error(err)
+
+    }
+    
+}
 
 function setLatestTokenRequestState(state, dataToFormatIfExists) {
     latestTokenRequestState = {
@@ -263,6 +296,18 @@ function setLatestTokenRequestState(state, dataToFormatIfExists) {
     };
 
     if (dataToFormatIfExists) {
+
+        console.log('raw: ',dataToFormatIfExists)
+
+        if(USE_REDIS){
+
+            redcli.set(config.redisKey,dataToFormatIfExists.access_token)
+            .then((resp)=>{
+
+                console.log('redis: ',resp)
+            })
+        }
+
         const json = JSON.stringify(dataToFormatIfExists, null, 2);
         // access and refresh tokens are difficult to copy paste in normal JSON formatting,
         // to make it easier we put them on a newline without the quotes
@@ -326,3 +371,9 @@ function formatLatestTokenRequestStateForDeveloper() {
 
     return formatRequestState;
 }
+
+startApp()
+/* .then(()=>{
+
+    console.log("App started")
+}) */

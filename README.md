@@ -21,6 +21,8 @@ Setup instructions
         airtableUrl: 'https://www.airtable.com',
         // space delimited list of Airtable scopes, update to the list of scopes you want for your integration
         scope: 'data.records:read data.records:write',
+        redisUrl:'redis://user:pass@redis.server:port',
+        redisKey:'airtable.auth',
     };
     module.exports = config;
     ```
