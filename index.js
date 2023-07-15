@@ -9,7 +9,7 @@ const redis = require('redis');
 let redcli;
 
 // If you experience problems with redis, set to false
-const USE_REDIS = false;
+const USE_REDIS = true;
 
 
 const app = express();
@@ -34,7 +34,23 @@ const authorizationHeader = `Basic ${encodedCredentials}`;
 // book keeping to make using this easier, not needed in a real implementation
 setLatestTokenRequestState('NONE');
 
-app.get('/', (req, res) => {
+app.get('/', async (req, res) => {
+
+    let redtoken
+
+    if(USE_REDIS){
+
+        redtoken = await redcli.get(config.redisKey);
+
+    }
+    else{
+
+        redtoken = "redis is not connected"
+    }
+
+     
+
+
     const latestRequestStateDisplayData = formatLatestTokenRequestStateForDeveloper();
     res.send(`
   <div>
@@ -53,6 +69,8 @@ app.get('/', (req, res) => {
         <input type="text" id="refresh" name="refresh_token" autocomplete="off" minLength="64"/>
         <input type="submit">
     </form>
+    <p>Redis key: ${config.redisKey}</p>
+    <p>Redis token: <pre>${ redtoken }</pre></p>
   `);
 });
 
@@ -273,7 +291,11 @@ const startApp = async ()=>{
 
             redcli.on('error', err => console.log('Redis Client Error', err));
 
-            await redcli.connect()
+            redcli.connect()    //await 
+            .then(()=>{
+
+                console.log('redis client ok')
+            })
         }
 
         app.listen(port, () => {
