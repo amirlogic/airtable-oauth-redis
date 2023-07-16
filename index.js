@@ -12,12 +12,14 @@ let redcli;
 const USE_REDIS = true;
 
 
+
 const app = express();
 app.use(bodyParser.urlencoded({extended: false}));
 app.use(bodyParser.json());
 // set up environment variables
 // if you have not created a .env file by following the README instructions this will not work
 const config = require('./.config.js');
+const { createServer } = require('http2');
 
 const clientId = config.clientId.trim();
 const clientSecret = config.clientSecret.trim();
@@ -291,10 +293,18 @@ const startApp = async ()=>{
 
             redcli.on('error', err => console.log('Redis Client Error', err));
 
+            redcli.on('connect', () => console.log('Redis client is connecting...'));
+
+            redcli.on('ready', () => console.log('Redis client is ready'));
+
             redcli.connect()    //await 
             .then(()=>{
 
                 console.log('redis client ok')
+            })
+            .catch((cerr)=>{
+
+                console.error(cerr)
             })
         }
 
@@ -395,7 +405,3 @@ function formatLatestTokenRequestStateForDeveloper() {
 }
 
 startApp()
-/* .then(()=>{
-
-    console.log("App started")
-}) */
