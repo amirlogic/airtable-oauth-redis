@@ -2,9 +2,9 @@
 
 Example code for authorizing a user an Airtable OAuth integration.
 
+The script stores access token and refresh token in redis
 
-
-This code example is intended for Mac and Linux users. Windows developers may need to adjust the setup instructions slightly.
+You can then use https://github.com/amirlogic/airtable-to-redis
 
 Setup instructions
 

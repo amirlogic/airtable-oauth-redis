@@ -40,14 +40,20 @@ app.get('/', async (req, res) => {
 
     let redtoken
 
+    let refreshtkn
+
     if(USE_REDIS){
 
         redtoken = await redcli.get(config.redisKey);
+
+        refreshtkn = await redcli.get(`${config.redisKey}.refresh`);
 
     }
     else{
 
         redtoken = "redis is not connected"
+
+        refreshtkn = ''
     }
 
      
@@ -68,7 +74,7 @@ app.get('/', async (req, res) => {
     </p>
     <form action="/refresh_token" method="post" >
         <label for="refresh">Refresh token:
-        <input type="text" id="refresh" name="refresh_token" autocomplete="off" minLength="64"/>
+        <input type="text" id="refresh" name="refresh_token" autocomplete="off" minLength="64" value="${refreshtkn}" />
         <input type="submit">
     </form>
     <p>Redis key: ${config.redisKey}</p>
@@ -293,7 +299,7 @@ const startApp = async ()=>{
 
             redcli.on('error', err => console.log('Redis Client Error', err));
 
-            redcli.on('connect', () => console.log('Redis client is connecting...'));
+            //redcli.on('connect', () => console.log('Redis client is connecting...'));
 
             redcli.on('ready', () => console.log('Redis client is ready'));
 
@@ -329,11 +335,15 @@ function setLatestTokenRequestState(state, dataToFormatIfExists) {
 
     if (dataToFormatIfExists) {
 
-        console.log('raw: ',dataToFormatIfExists)
+        //console.log('raw: ',dataToFormatIfExists)
 
         if(USE_REDIS){
 
-            redcli.set(config.redisKey,dataToFormatIfExists.access_token)
+            redcli
+            .multi()
+                .set(config.redisKey,dataToFormatIfExists.access_token)
+                .set(`${config.redisKey}.refresh`,dataToFormatIfExists.refresh_token)
+            .exec()
             .then((resp)=>{
 
                 console.log('redis: ',resp)
